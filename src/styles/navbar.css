@@ -1,0 +1,18 @@
+@import './variables.css';
+
+/* Navbar links can be styled here if needed */
+.navbar-link {
+  text-decoration: none;
+  color: white;
+}
+
+.navbar-title {
+  flex-grow: 1;
+  text-decoration: none;
+  color: white;
+}
+
+.navbar-buttons {
+  display: flex;
+  gap: var(--spacing-md);
+}

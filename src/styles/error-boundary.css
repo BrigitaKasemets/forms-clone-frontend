@@ -1,0 +1,42 @@
+@import './variables.css';
+
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  margin: var(--spacing-xl) auto;
+  max-width: 800px;
+  text-align: center;
+}
+
+.error-icon {
+  color: var(--error-color);
+  font-size: var(--font-size-xxl);
+  margin-bottom: var(--spacing-md);
+}
+
+.error-title {
+  color: var(--error-color);
+  margin-bottom: var(--spacing-md);
+}
+
+.error-message {
+  margin-bottom: var(--spacing-lg);
+}
+
+.error-details {
+  background-color: var(--background-light);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-sm);
+  width: 100%;
+  overflow-x: auto;
+  margin-bottom: var(--spacing-lg);
+  text-align: left;
+  font-family: monospace;
+}
+
+.error-button {
+  margin-top: var(--spacing-md);
+}

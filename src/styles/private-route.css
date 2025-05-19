@@ -1,0 +1,12 @@
+@import './variables.css';
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+}
+
+.loading-spinner {
+  color: var(--primary-color);
+}
