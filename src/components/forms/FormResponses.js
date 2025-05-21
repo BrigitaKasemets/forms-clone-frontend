@@ -70,12 +70,10 @@ const FormResponses = () => {
         
         // Fetch form questions
         const questionsData = await QuestionsService.getQuestions(formId);
-        console.log('Laaditud küsimused:', questionsData);
         setQuestions(questionsData);
         
         // Fetch form responses
         const responsesData = await ResponsesService.getResponses(formId);
-        console.log('Laaditud vastused:', responsesData);
         setResponses(responsesData);
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -100,8 +98,6 @@ const FormResponses = () => {
   
   // Handle response detail view
   const handleViewResponse = (response) => {
-    console.log('Avatud vastuse detailid:', response);
-    console.log('Olemasolevad küsimused vaatamise hetkel:', questions);
     setSelectedResponse(response);
     setOpenDetailDialog(true);
   };
@@ -143,23 +139,19 @@ const FormResponses = () => {
     }
   };
   
+  // Find question by ID and return full question object
+  const getQuestion = (questionId) => {
+    if (!questionId) return null;
+    
+    // Try exact ID match first (taking care of different types)
+    const question = questions.find(q => String(q.id) === String(questionId));
+    return question || null;
+  };
+  
   // Find question text by ID
   const getQuestionText = (questionId) => {
-    console.log('Otsitav küsimuse ID:', questionId, 'Olemasolevad küsimused:', questions);
-    // Proovi leida kõigepealt otsese id võrdlusega
-    const question = questions.find(q => q.id === questionId);
-    
-    if (question) {
-      return question.text;
-    }
-    
-    // Kui täpset ID-d ei leitud, proovi string/number tüübi teisendusega
-    const questionByStringId = questions.find(q => String(q.id) === String(questionId));
-    if (questionByStringId) {
-      return questionByStringId.text;
-    }
-    
-    return 'Küsimus pole saadaval';
+    const question = getQuestion(questionId);
+    return question ? question.text : 'Küsimus pole saadaval';
   };
   
   if (loading && !form) {
@@ -301,12 +293,12 @@ const FormResponses = () => {
           </Typography>
           
           {selectedResponse?.answers.map((answer, index) => {
-            const questionText = getQuestionText(answer.questionId);
+            const question = getQuestion(answer.questionId);
             return (
               <Accordion key={index} sx={{ mb: 1 }}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                   <Typography>
-                    <strong>Küsimus {index + 1}:</strong> {questionText.substring(0, 60)}{questionText.length > 60 ? '...' : ''}
+                    <strong>Küsimus {index + 1}:</strong> {question ? question.text.substring(0, 60) + (question.text.length > 60 ? '...' : '') : 'Küsimus pole saadaval'}
                   </Typography>
                 </AccordionSummary>
                 <AccordionDetails>
@@ -316,7 +308,7 @@ const FormResponses = () => {
                         Küsimus:
                       </Typography>
                       <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                        {questionText}
+                        {question ? question.text : 'Küsimus pole saadaval'}
                       </Typography>
                     </Box>
                     

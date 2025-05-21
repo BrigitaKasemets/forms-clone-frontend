@@ -30,6 +30,33 @@ import QuestionsService from '../../services/questions.service';
 import ResponsesService from '../../services/responses.service';
 import { useAuth } from '../auth/AuthContext';
 
+// Helper function to initialize answers
+const createInitialAnswers = (questions) => {
+  const initialAnswers = {};
+  questions.forEach(question => {
+    if (question.type === 'checkbox') {
+      initialAnswers[question.id] = [];
+    } else {
+      initialAnswers[question.id] = '';
+    }
+  });
+  return initialAnswers;
+};
+
+// Reusable alert component
+const AlertMessage = ({ open, message, severity, onClose }) => (
+  <Snackbar
+    open={open}
+    autoHideDuration={6000}
+    onClose={onClose}
+    anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+  >
+    <Alert onClose={onClose} severity={severity}>
+      {message}
+    </Alert>
+  </Snackbar>
+);
+
 const FormView = () => {
   const { formId } = useParams();
   const navigate = useNavigate();
@@ -59,15 +86,7 @@ const FormView = () => {
         setQuestions(questionsData);
         
         // Initialize answers object
-        const initialAnswers = {};
-        questionsData.forEach(question => {
-          if (question.type === 'checkbox') {
-            initialAnswers[question.id] = [];
-          } else {
-            initialAnswers[question.id] = '';
-          }
-        });
-        setAnswers(initialAnswers);
+        setAnswers(createInitialAnswers(questionsData));
       } catch (err) {
         console.error('Error fetching form data:', err);
         setError('Vormi andmete laadimine ebaõnnestus. Proovige hiljem uuesti.');
@@ -182,19 +201,11 @@ const FormView = () => {
       setSuccess('Teie vastus on edukalt salvestatud!');
       
       // Clear form after submission
-      const initialAnswers = {};
-      questions.forEach(question => {
-        if (question.type === 'checkbox') {
-          initialAnswers[question.id] = [];
-        } else {
-          initialAnswers[question.id] = '';
-        }
-      });
-      setAnswers(initialAnswers);
+      setAnswers(createInitialAnswers(questions));
       
       // Navigate back to forms list after a delay
       setTimeout(() => {
-        navigate('/forms', { state: { activeTab: 0 } });
+        navigate('/forms', { state: { activeTab: isFormOwner() ? 0 : 1 } });
       }, 3000);
     } catch (err) {
       console.error('Error submitting form:', err);
@@ -217,18 +228,11 @@ const FormView = () => {
     );
   }
 
-  // Determine the correct tab to navigate back to
-  const getTargetTab = () => {
-    // If user is the form owner, go to "My Forms" tab (0)
-    // Otherwise, go to "Available Forms" tab (1)
-    return isFormOwner() ? 0 : 1;
-  };
-
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Box display="flex" alignItems="center">
-          <IconButton color="primary" onClick={() => navigate('/forms', { state: { activeTab: getTargetTab() } })} sx={{ mr: 2 }}>
+          <IconButton color="primary" onClick={() => navigate('/forms', { state: { activeTab: isFormOwner() ? 0 : 1 } })} sx={{ mr: 2 }}>
             <ArrowBackIcon />
           </IconButton>
           <Typography variant="h4" component="h1">
@@ -410,29 +414,20 @@ const FormView = () => {
         )}
       </Paper>
       
-      {/* Success Message */}
-      <Snackbar
+      {/* Success and Error Messages */}
+      <AlertMessage 
         open={!!success}
-        autoHideDuration={6000}
+        message={success}
+        severity="success"
         onClose={() => setSuccess('')}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={() => setSuccess('')} severity="success">
-          {success}
-        </Alert>
-      </Snackbar>
+      />
       
-      {/* Error Message */}
-      <Snackbar
+      <AlertMessage 
         open={!!error}
-        autoHideDuration={6000}
+        message={error}
+        severity="error"
         onClose={() => setError('')}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={() => setError('')} severity="error">
-          {error}
-        </Alert>
-      </Snackbar>
+      />
     </Container>
   );
 };

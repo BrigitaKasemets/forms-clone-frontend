@@ -55,11 +55,6 @@ const FormsList = () => {
   const { currentUser } = useAuth();
 
   useEffect(() => {
-    console.log('useEffect triggered with currentUser:', 
-                 currentUser ? 
-                 `ID: ${currentUser.user?.id}, isLoggedIn: ${currentUser.isLoggedIn}` : 
-                 'null');
-    
     // Reset loading state when user changes 
     setLoading(true);
     
@@ -69,40 +64,22 @@ const FormsList = () => {
     }, 100);
     
     return () => clearTimeout(timer);
-  }, [currentUser]); // Lisame currentUser sõltuvuseks, et vormid laaditaks uuesti, kui kasutaja muutub
+  }, [currentUser]);
   
-  // Kontrollime, kas tulime siia mõne muu lehe navigeerimisest ja 
-  // kas meil on kaasas soovitud tab'i info
+  // Set active tab based on navigation state
   useEffect(() => {
     if (location.state && typeof location.state.activeTab !== 'undefined') {
-      console.log('Seadistan aktiivse tabi location state põhjal:', location.state.activeTab);
       setTabValue(location.state.activeTab);
     }
   }, [location.state]);
 
   const fetchForms = async () => {
     try {
-      console.log('fetchForms käivitatud. Kasutaja info:', currentUser);
-      
-      // Kui oleme vormide lehe külastanud kohe pärast sisselogimist ja
-      // kasutaja andmed veel puuduvad, ootame natuke enne laadimist
-      if (!currentUser || !currentUser.user || !currentUser.user.id) {
-        console.log('Kasutaja andmed pole veel täielikult laaditud, ootame...');
-        // Kui soovid, võid siin lisada viivituse ja siis uuesti proovida
-      }
-      
       setLoading(true);
       const data = await FormsService.getAllForms();
-      console.log('Fetched forms:', data);
-      // Log the structure of each form to check the userId
-      data.forEach(form => {
-        console.log(`Form ${form.id}: userId=${form.userId}, title=${form.title}`);
-      });
-      console.log('Current user for filtering:', currentUser);
       setForms(data);
       setError('');
     } catch (err) {
-      console.error('Error fetching forms:', err);
       setError('Vormide laadimine ebaõnnestus. Proovige hiljem uuesti.');
     } finally {
       setLoading(false);
@@ -148,8 +125,6 @@ const FormsList = () => {
       isValid = false;
     }
     
-    // Description is optional but can have validation if needed
-    
     setFormErrors(errors);
     return isValid;
   };
@@ -166,10 +141,7 @@ const FormsList = () => {
         userId: currentUser?.user?.id
       };
       
-      console.log('Creating form with data:', formData);
-      console.log('Current user from context:', currentUser);
       const createdForm = await FormsService.createForm(formData);
-      console.log('Form created, response from server:', createdForm);
       
       // Add the new form to the list with the correct userId
       const formWithUserId = {
@@ -188,7 +160,6 @@ const FormsList = () => {
         navigate(`/forms/${createdForm.id}/edit`);
       }, 1000);
     } catch (err) {
-      console.error('Error creating form:', err);
       setError('Vormi loomine ebaõnnestus. Proovige hiljem uuesti.');
     } finally {
       setLoading(false);
@@ -220,7 +191,6 @@ const FormsList = () => {
       setFormToDelete(null);
       setSuccess('Vorm on edukalt kustutatud!');
     } catch (err) {
-      console.error('Error deleting form:', err);
       setError('Vormi kustutamine ebaõnnestus. Proovige hiljem uuesti.');
     } finally {
       setLoading(false);
@@ -229,44 +199,28 @@ const FormsList = () => {
 
   // Filter forms based on ownership
   const myForms = forms.filter(form => {
-    // Kui vorm või userId puudub, siis ei kuulu see kindlasti praegusele kasutajale
-    if (!form || !form.userId) {
-      console.log(`Form ${form?.id || 'unknown'}: skipping because userId is missing`);
-      return false;
-    }
+    if (!form || !form.userId || !currentUser?.user?.id) return false;
     
-    // Kui kasutaja pole sisselogitud või kasutaja ID puudub, siis vorm ei kuulu talle
-    if (!currentUser || !currentUser.user || !currentUser.user.id) {
-      console.log(`Form ${form.id}: skipping because user is not logged in or user.id is missing`);
-      return false;
-    }
-    
-    // Teisendame ID-d stringideks võrdlemiseks, et vältida tüübiprobleeme
+    // Convert IDs to strings for comparison to avoid type issues
     const formUserId = String(form.userId);
     const currentUserId = String(currentUser.user.id);
     
-    console.log(`Comparing form ${form.id}: formUserId=${formUserId} with currentUserId=${currentUserId}`);
-    const isMatch = formUserId === currentUserId;
-    console.log(`Form ${form.id} belongs to current user: ${isMatch}`);
-    
-    return isMatch;
+    return formUserId === currentUserId;
   });
   
   const otherForms = forms.filter(form => {
-    // Kui vorm või userId puudub, siis ei saa me kindlaks teha, kellele see kuulub
     if (!form || !form.userId) return false;
     
-    // Kui kasutaja pole sisselogitud, kuuluvad kõik vormid "teistele"
-    if (!currentUser || !currentUser.user || !currentUser.user.id) return true;
+    if (!currentUser?.user?.id) return true;
     
-    // Teisendame ID-d stringideks võrdlemiseks
+    // Convert IDs to strings for comparison
     const formUserId = String(form.userId);
     const currentUserId = String(currentUser.user.id);
     
     return formUserId !== currentUserId;
   });
 
-  // Renderdame laadimise indikaatori kui vormid on laadimisel
+  // Render loading indicator while forms are loading
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4, display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center' }}>
@@ -282,14 +236,98 @@ const FormsList = () => {
       </Container>
     );
   }
-  
-  console.log('Rendering FormsList with:', {
-    totalForms: forms.length,
-    myForms: myForms.length,
-    otherForms: otherForms.length,
-    tabValue,
-    isUserLoggedIn: !!currentUser?.isLoggedIn
-  });
+
+  // Extracted form card render function to avoid duplicate code
+  const renderFormCard = (form, isMyForm) => (
+    <Grid item xs={12} sm={6} md={4} key={form.id}>
+      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <CardContent sx={{ flexGrow: 1 }}>
+          <Typography variant="h5" component="h2" gutterBottom noWrap>
+            {form.title}
+          </Typography>
+          <Typography variant="body2" color="textSecondary" 
+            sx={{ 
+              mb: 2, 
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              height: '40px'
+            }}
+          >
+            {form.description || 'Kirjeldus puudub'}
+          </Typography>
+          <Typography variant="caption" color="textSecondary" display="block">
+            Loodud: {new Date(form.createdAt).toLocaleDateString()}
+          </Typography>
+          {isMyForm && (
+            <Typography variant="caption" color="textSecondary" display="block">
+              Viimati muudetud: {new Date(form.updatedAt).toLocaleDateString()}
+            </Typography>
+          )}
+        </CardContent>
+        <CardActions>
+          {isMyForm ? (
+            <>
+              <IconButton 
+                size="small" 
+                color="primary"
+                onClick={() => navigate(`/forms/${form.id}`)}
+                title="Vaata"
+              >
+                <VisibilityIcon />
+              </IconButton>
+              <IconButton 
+                size="small" 
+                color="primary"
+                onClick={() => navigate(`/forms/${form.id}/edit`)}
+                title="Muuda"
+              >
+                <EditIcon />
+              </IconButton>
+              <IconButton 
+                size="small" 
+                color="primary"
+                onClick={() => navigate(`/forms/${form.id}/responses`)}
+                title="Vaata vastuseid"
+              >
+                <AssessmentIcon />
+              </IconButton>
+              <IconButton 
+                size="small" 
+                color="error"
+                onClick={() => handleDeleteClick(form)}
+                title="Kustuta"
+                sx={{ ml: 'auto' }}
+              >
+                <DeleteIcon />
+              </IconButton>
+            </>
+          ) : (
+            <>
+              <Button 
+                size="small" 
+                color="primary"
+                startIcon={<VisibilityIcon />}
+                onClick={() => navigate(`/forms/${form.id}`)}
+              >
+                Vaata
+              </Button>
+              <Button 
+                size="small" 
+                color="primary"
+                startIcon={<ReplyIcon />}
+                onClick={() => navigate(`/forms/${form.id}`)}
+              >
+                Vasta
+              </Button>
+            </>
+          )}
+        </CardActions>
+      </Card>
+    </Grid>
+  );
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -340,71 +378,7 @@ const FormsList = () => {
             </Box>
           ) : (
             <Grid container spacing={3}>
-              {myForms.map(form => (
-                <Grid item xs={12} sm={6} md={4} key={form.id}>
-                  <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Typography variant="h5" component="h2" gutterBottom noWrap>
-                        {form.title}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary" 
-                        sx={{ 
-                          mb: 2, 
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          height: '40px'
-                        }}
-                      >
-                        {form.description || 'Kirjeldus puudub'}
-                      </Typography>
-                      <Typography variant="caption" color="textSecondary" display="block">
-                        Loodud: {new Date(form.createdAt).toLocaleDateString()}
-                      </Typography>
-                      <Typography variant="caption" color="textSecondary" display="block">
-                        Viimati muudetud: {new Date(form.updatedAt).toLocaleDateString()}
-                      </Typography>
-                    </CardContent>
-                    <CardActions>
-                      <IconButton 
-                        size="small" 
-                        color="primary"
-                        onClick={() => navigate(`/forms/${form.id}`)}
-                        title="Vaata"
-                      >
-                        <VisibilityIcon />
-                      </IconButton>
-                      <IconButton 
-                        size="small" 
-                        color="primary"
-                        onClick={() => navigate(`/forms/${form.id}/edit`)}
-                        title="Muuda"
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton 
-                        size="small" 
-                        color="primary"
-                        onClick={() => navigate(`/forms/${form.id}/responses`)}
-                        title="Vaata vastuseid"
-                      >
-                        <AssessmentIcon />
-                      </IconButton>
-                      <IconButton 
-                        size="small" 
-                        color="error"
-                        onClick={() => handleDeleteClick(form)}
-                        title="Kustuta"
-                        sx={{ ml: 'auto' }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </CardActions>
-                  </Card>
-                </Grid>
-              ))}
+              {myForms.map(form => renderFormCard(form, true))}
             </Grid>
           )}
         </>
@@ -421,51 +395,7 @@ const FormsList = () => {
             </Box>
           ) : (
             <Grid container spacing={3}>
-              {otherForms.map(form => (
-                <Grid item xs={12} sm={6} md={4} key={form.id}>
-                  <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Typography variant="h5" component="h2" gutterBottom noWrap>
-                        {form.title}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary" 
-                        sx={{ 
-                          mb: 2, 
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          height: '40px'
-                        }}
-                      >
-                        {form.description || 'Kirjeldus puudub'}
-                      </Typography>
-                      <Typography variant="caption" color="textSecondary" display="block">
-                        Loodud: {new Date(form.createdAt).toLocaleDateString()}
-                      </Typography>
-                    </CardContent>
-                    <CardActions>
-                      <Button 
-                        size="small" 
-                        color="primary"
-                        startIcon={<VisibilityIcon />}
-                        onClick={() => navigate(`/forms/${form.id}`)}
-                      >
-                        Vaata
-                      </Button>
-                      <Button 
-                        size="small" 
-                        color="primary"
-                        startIcon={<ReplyIcon />}
-                        onClick={() => navigate(`/forms/${form.id}`)}
-                      >
-                        Vasta
-                      </Button>
-                    </CardActions>
-                  </Card>
-                </Grid>
-              ))}
+              {otherForms.map(form => renderFormCard(form, false))}
             </Grid>
           )}
         </>
