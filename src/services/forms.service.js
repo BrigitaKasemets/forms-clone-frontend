@@ -35,9 +35,51 @@ const FormsService = {
    */
   createForm: async (formData) => {
     try {
-      const response = await api.post('/forms', formData);
-      return response.data;
+      const formDataToSend = { ...formData };
+      
+      // Make sure to convert userId to a string for consistent comparison
+      if (formDataToSend.userId) {
+        formDataToSend.userId = String(formDataToSend.userId);
+      }
+      
+      // If userId wasn't already set in the formData, try to get it from localStorage
+      if (!formDataToSend.userId) {
+        console.log('No userId provided, trying to get from localStorage');
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          try {
+            const userData = JSON.parse(userStr);
+            console.log('User data from localStorage:', userData);
+            
+            // The user could be stored directly or in a nested user property
+            if (userData && userData.id) {
+              formDataToSend.userId = String(userData.id);
+            } else if (userData && userData.user && userData.user.id) {
+              formDataToSend.userId = String(userData.user.id);
+            }
+          } catch (e) {
+            console.error('Error parsing user data from localStorage:', e);
+          }
+        }
+      }
+      
+      console.log('Creating form with data:', formDataToSend);
+      const response = await api.post('/forms', formDataToSend);
+      console.log('Form created, API response:', response.data);
+      
+      // Ensure the created form has the same userId as we sent
+      const createdForm = {
+        ...response.data
+      };
+      
+      if (formDataToSend.userId && !createdForm.userId) {
+        console.log('Adding userId to form because it was missing in the response');
+        createdForm.userId = formDataToSend.userId;
+      }
+      
+      return createdForm;
     } catch (error) {
+      console.error('Error creating form:', error);
       throw error.response?.data || { error: 'Failed to create form' };
     }
   },

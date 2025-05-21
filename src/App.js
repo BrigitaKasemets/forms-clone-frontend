@@ -7,6 +7,12 @@ import ProfilePage from './components/user/ProfilePage';
 import Layout from './components/ui/Layout';
 import PrivateRoute from './components/ui/PrivateRoute';
 
+// Forms components
+import FormsList from './components/forms/FormsList';
+import FormEdit from './components/forms/FormEdit';
+import FormView from './components/forms/FormView';
+import FormResponses from './components/forms/FormResponses';
+
 function App() {
   console.log("App component rendering");
   
@@ -20,10 +26,13 @@ function App() {
             
             {/* Protected routes */}
             <Route element={<PrivateRoute />}>
-              <Route path="/forms" element={<div>Vormide leht</div>} />
+              {/* Form routes */}
+              <Route path="/forms" element={<FormsList />} />
+              <Route path="/forms/:formId" element={<FormView />} />
+              <Route path="/forms/:formId/edit" element={<FormEdit />} />
+              <Route path="/forms/:formId/responses" element={<FormResponses />} />
+              
               <Route path="/profile" element={<ProfilePage />} />
-
-              {/* Add more protected routes here */}
             </Route>
             
             {/* Redirect from homepage to forms page */}

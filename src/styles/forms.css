@@ -1,0 +1,120 @@
+@import './variables.css';
+
+/* Forms list page */
+.forms-list-container {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.form-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.form-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-md);
+}
+
+.form-card-content {
+  flex-grow: 1;
+}
+
+.form-card-title {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.form-card-description {
+  color: var(--text-light);
+  margin-bottom: 1rem;
+}
+
+.form-card-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-xs);
+  color: var(--text-light);
+}
+
+/* Form Edit page */
+.question-item {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  background-color: var(--background-light);
+}
+
+.question-item:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.question-type-chip {
+  margin-left: 1rem;
+}
+
+.required-indicator {
+  color: var(--error-color);
+  margin-left: 0.5rem;
+}
+
+.option-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+/* Form View page */
+.form-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.form-header {
+  margin-bottom: 2rem;
+}
+
+.form-title {
+  font-size: var(--font-size-xl);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.form-description {
+  color: var(--text-light);
+}
+
+.question-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  border-radius: var(--border-radius-md);
+  background-color: white;
+}
+
+.question-text {
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+
+/* Form Responses page */
+.responses-table {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.response-detail-dialog {
+  padding: 1rem;
+}
+
+.response-detail-question {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.response-detail-answer {
+  margin-bottom: 1.5rem;
+  padding-left: 1rem;
+}

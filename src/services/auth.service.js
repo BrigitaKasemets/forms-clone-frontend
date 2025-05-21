@@ -20,11 +20,21 @@ const authService = {
             const userId = response.data.userId;
             console.log(`Fetching user data for userId: ${userId}`);
 
-            const userResponse = await api.get(`/users/${userId}`);
-            console.log('Fetched user data after login:', userResponse.data);
-            if (userResponse.data) {
-              localStorage.setItem('user', JSON.stringify(userResponse.data));
-            }
+            // Make the request for user data but don't wait for it before returning
+            // This improves perceived performance
+            api.get(`/users/${userId}`)
+              .then(userResponse => {
+                console.log('Fetched user data after login:', userResponse.data);
+                if (userResponse.data) {
+                  localStorage.setItem('user', JSON.stringify(userResponse.data));
+                }
+              })
+              .catch(userErr => {
+                console.error('Could not fetch user data after login:', userErr);
+              });
+              
+            // Still store minimal user data we have now
+            localStorage.setItem('user', JSON.stringify({ id: userId, email }));
           } catch (userErr) {
             console.error('Could not fetch user data after login:', userErr);
           }

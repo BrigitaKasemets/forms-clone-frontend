@@ -40,10 +40,20 @@ export const AuthProvider = ({ children }) => {
         throw new Error("[AUTH_INVALID_CREDENTIALS] Vale e-posti aadress või parool");
       }
 
-      setCurrentUser({
+      // Set the user data with all required fields
+      const userData = {
         isLoggedIn: true,
         token: response.token,
-        user: response.user || { email }
+        user: response.user || { email, id: response.userId }
+      };
+      
+      console.log("Setting current user with:", userData);
+      setCurrentUser(userData);
+      
+      console.log("Login successful, currentUser set to:", {
+        isLoggedIn: true,
+        token: response.token ? "exists" : "missing",
+        user: userData.user
       });
 
       return response;

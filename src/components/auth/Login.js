@@ -105,6 +105,18 @@ const Login = () => {
 
   // Kuna kasutame localStorage init, siis kui on juba viga, näitame kohe Snackbari
   useEffect(() => {
+    // Puhastame salvestatud vead, kui komponent laetakse uuesti
+    const clearLoginErrors = () => {
+      localStorage.removeItem('loginError');
+      localStorage.removeItem('loginEmailError');
+      localStorage.removeItem('loginPasswordError');
+      localStorage.removeItem('loginAttempted');
+      localStorage.removeItem('hasAuthError');
+    };
+
+    // Puhastame localStorage'ist vanad veateated komponendi laadimisel
+    clearLoginErrors();
+    
     if (hasAuthError) {
       setShowSnackbar(true);
     }
@@ -145,6 +157,9 @@ const Login = () => {
     try {
       setLoading(true);
       
+      // Puhastame veateated enne sisse logimist
+      clearAllErrors();
+      
       // Valideerimine
       if (!email) {
         setPersistentEmailError('E-posti aadress on kohustuslik');
@@ -160,6 +175,10 @@ const Login = () => {
         return;
       }
       
+      // Alustame navigeerimiseks ettevalmistust kohe
+      // See kiirendab kasutaja tajutavat kiirust
+      const formSubmitTime = Date.now();
+      
       // Proovime kasutaja sisse logida
       const result = await login(email, password);
       console.log("Login successful:", result);
@@ -172,10 +191,20 @@ const Login = () => {
       console.log("Token in localStorage after login:", !!token);
       
       if (token) {
-        // Navigeerime edasi
+        // Anname aega AuthContext'ile, et see saaks korralikult uuendatud
+        console.log('Edukalt sisselogitud, navigeerin vormide lehele...');
+        
+        // Arvutame, kui kaua on läinud aega vormi esitamisest
+        const elapsedTime = Date.now() - formSubmitTime;
+        
+        // Kui aega on läinud vähem kui 100ms, lisame väikese viivituse,
+        // et kasutaja näeks, et süsteem töötleb tema päringut
+        const navigateDelay = elapsedTime < 100 ? 100 - elapsedTime : 0;
+        
+        // Suuname kasutaja vormide lehele optimaalse viivitusega
         setTimeout(() => {
-          navigate('/forms', { replace: true });
-        }, 100);
+          navigate('/forms', { replace: true, state: { activeTab: 0 } });
+        }, navigateDelay);
       } else {
         setPersistentError('Sisselogimine ebaõnnestus: Puudub autentimistoken');
         setLoading(false);
@@ -322,9 +351,40 @@ const Login = () => {
             variant="contained"
             className="auth-submit-button"
             disabled={loading}
-            sx={{ mt: 2, mb: 2 }}
+            sx={{ 
+              mt: 2, 
+              mb: 2,
+              position: 'relative',
+              '&.Mui-disabled': {
+                backgroundColor: '#1976d2',
+                color: 'rgba(255, 255, 255, 0.8)'
+              }
+            }}
           >
-            {loading ? 'Sisselogimine...' : 'Logi sisse'}
+            {loading ? (
+              <>
+                <span style={{ opacity: 0.7 }}>Sisselogimine...</span>
+                <span 
+                  style={{ 
+                    position: 'absolute', 
+                    right: '10px',
+                    display: 'inline-block',
+                    width: '10px',
+                    height: '10px',
+                    borderRadius: '50%',
+                    backgroundColor: 'white',
+                    animation: 'pulse 1s infinite'
+                  }} 
+                />
+                <style jsx>{`
+                  @keyframes pulse {
+                    0% { opacity: 0.4; }
+                    50% { opacity: 1; }
+                    100% { opacity: 0.4; }
+                  }
+                `}</style>
+              </>
+            ) : 'Logi sisse'}
           </Button>
           
           {/* Näitame puhasta nupu kohe pärast sisselogimise nuppu, kui viga on ilmnenud */}

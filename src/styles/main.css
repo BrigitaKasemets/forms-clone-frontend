@@ -6,6 +6,7 @@
 @import './register.css';
 @import './private-route.css';
 @import './error-boundary.css';
+@import './forms.css';
 
 /* Reset and base styles */
 * {

@@ -182,8 +182,8 @@ const Register = () => {
         // Ootame veidi, et AuthContext jõuaks uuendada state'i
         setTimeout(() => {
           console.log("Navigating to /forms after successful registration");
-          navigate('/forms', { replace: true });
-        }, 100);
+          navigate('/forms', { replace: true, state: { activeTab: 0 } });
+        }, 500); // Suurendame intervalli, et kindlustada andmete kättesaadavus
       } else {
         // Kui mingil põhjusel tokenit pole, suuname sisselogimislehele
         navigate('/login');
