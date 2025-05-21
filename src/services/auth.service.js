@@ -9,6 +9,27 @@ const authService = {
       // Salvestame tokeni localStorage'isse, et seda oleks võimalik hiljem kasutada
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
+        
+        // Save user data if available
+        if (response.data.user) {
+          console.log('Saving user data to localStorage:', response.data.user);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+        } else if (response.data.userId) {
+          // If user data is not included but we have userId, fetch user data using the correct endpoint
+          try {
+            const userId = response.data.userId;
+            console.log(`Fetching user data for userId: ${userId}`);
+
+            const userResponse = await api.get(`/users/${userId}`);
+            console.log('Fetched user data after login:', userResponse.data);
+            if (userResponse.data) {
+              localStorage.setItem('user', JSON.stringify(userResponse.data));
+            }
+          } catch (userErr) {
+            console.error('Could not fetch user data after login:', userErr);
+          }
+        }
+        
         console.log("Token saved to localStorage");
       } else {
         console.error("No token in response data:", response.data);
@@ -55,87 +76,76 @@ const authService = {
     }
   },
   
-  // Ülejäänud meetodid jäävad samaks
   register: async (email, password, name) => {
     try {
       const response = await api.post('/users', { email, password, name });
-      
-      // Salvestame tokeni localStorage'isse, kui see on olemas
+      console.log("Registration response:", response.data);
+
+      // Kui serverist tuleb tagasi token, siis salvestame selle ja kasutajaandmed
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
+
+        // Salvestame ka kasutaja andmed kui need on saadaval
+        if (response.data.user) {
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+        }
       }
-      
+
       return response.data;
     } catch (error) {
-      console.error("AuthService register error:", error);
-      
-      // Handle different error types
-      let errorMessage = 'Registreerimine ebaõnnestus. Proovige uuesti.';
-      
+      console.error("Registration error:", error);
+
+      let errorMessage = 'Registreerimine ebaõnnestus. Palun proovige uuesti.';
+
       if (error.response) {
-        // Kui server vastas veateatega
-        errorMessage = error.response.data?.message || 
-                       error.response.data?.error || 
-                       `Registreerimine ebaõnnestus: ${error.response.status}`;
-      } else if (error.request) {
-        // Kui tehti päring aga server ei vastanud
-        errorMessage = 'Serveriga ei õnnestunud ühendust luua. Kontrollige oma internetiühendust.';
+        // Handle different error types
+        const status = error.response.status;
+        const data = error.response.data;
+
+        if (status === 409) {
+          errorMessage = 'See e-posti aadress on juba kasutuses.';
+        } else if (status === 400 && data.message) {
+          errorMessage = data.message;
+        } else {
+          errorMessage = data?.message || data?.error || `Registreerimine ebaõnnestus: ${status}`;
+        }
       }
-      
+
       throw new Error(errorMessage);
     }
   },
-  
-  logout: async () => {
+
+  logout: () => {
     try {
-      // Kutsume API-st välja, et lõpetada seanss serveripoolselt
-      const response = await api.delete('/sessions');
-      
-      // Eemaldame tokeni localStorage-ist
       localStorage.removeItem('token');
-      
-      return response.data;
+      localStorage.removeItem('user');
+      console.log("User logged out, cleared localStorage");
+      return true;
     } catch (error) {
-      console.error("AuthService logout error:", error);
-      // Isegi kui API kutsung ebaõnnestub, eemaldame tokeni
-      localStorage.removeItem('token');
-      
-      // Veateate loomine ja edastamine
-      let errorMessage = 'Väljalogimine ebaõnnestus.';
-      if (error.response) {
-        errorMessage = error.response.data?.message || 
-                      error.response.data?.error || 
-                      errorMessage;
-      }
-      
-      throw new Error(errorMessage);
+      console.error("Logout error:", error);
+      return false;
     }
   },
-  
+
   getCurrentUser: () => {
-    const token = localStorage.getItem('token');
-    console.log("getCurrentUser called, token exists:", !!token);
-    
-    if (!token) return null;
-    
     try {
-      // Kui token on olemas, loeme seda kui kasutaja autentimise tõendit
-      // Tavalises rakenduses dekodeeriksime JWT tokeni, et saada rohkem infot
-      return { 
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return null;
+      }
+
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      return {
+        token,
         isLoggedIn: true,
-        token: token 
+        user
       };
     } catch (error) {
-      console.error("Error getting current user from token:", error);
-      // Kui tokeniga on probleeme, eemaldame selle
-      localStorage.removeItem('token');
+      console.error("Error getting current user:", error);
       return null;
     }
-  },
-  
-  isAuthenticated: () => {
-    return !!localStorage.getItem('token');
   }
 };
 
 export default authService;
+

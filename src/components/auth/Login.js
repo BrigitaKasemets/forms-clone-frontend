@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { 
   Box, 
@@ -47,8 +47,13 @@ const Login = () => {
   // Snackbar näitamiseks autentimisvea puhul
   const [showSnackbar, setShowSnackbar] = useState(false);
   
+  // Success message for account actions
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   
   // Abifunktsioon veateadete püsivaks tegemiseks
   const setPersistentError = (message) => {
@@ -104,9 +109,18 @@ const Login = () => {
       setShowSnackbar(true);
     }
     
+    // Check for messages in location state (like account deletion)
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      setShowSuccessMessage(true);
+      
+      // Clear location state to prevent showing the message after refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    
     // DEBUGGING
     console.log('Login komponent renderdatud, error:', error, 'hasAuthError:', hasAuthError);
-  }, [error, hasAuthError]);
+  }, [error, hasAuthError, location, navigate]);
 
   const handleEmailChange = (e) => {
     setEmail(e.target.value);
@@ -364,6 +378,32 @@ const Login = () => {
           </Button>
         }
       />
+      
+      {/* Success message snackbar */}
+      <Snackbar
+        open={showSuccessMessage}
+        autoHideDuration={6000}
+        onClose={() => setShowSuccessMessage(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        sx={{ 
+          marginTop: 2,
+          '& .MuiSnackbarContent-root': {
+            backgroundColor: '#4caf50',
+            color: 'white',
+            fontWeight: 'bold',
+            padding: 2
+          }
+        }}
+      >
+        <Alert 
+          onClose={() => setShowSuccessMessage(false)} 
+          severity="success"
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {successMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

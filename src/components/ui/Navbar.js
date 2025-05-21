@@ -1,5 +1,6 @@
+// src/components/ui/Navbar.js - Updated with Users link
 import React, { useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
 import '../../styles/navbar.css';
@@ -7,6 +8,7 @@ import '../../styles/navbar.css';
 const Navbar = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   
   console.log("Navbar: Rendering with currentUser=", currentUser);
 
@@ -47,19 +49,42 @@ const Navbar = () => {
         <Box className="navbar-buttons">
           {isAuthenticated ? (
             <>
-              <Button color="inherit" component={Link} to="/forms">
+              <Button 
+                color="inherit" 
+                component={Link} 
+                to="/forms"
+                className={location.pathname === '/forms' ? 'active-nav-link' : ''}
+              >
                 Minu Vormid
               </Button>
+              <Button 
+                color="inherit" 
+                component={Link} 
+                to="/profile"
+                className={location.pathname === '/profile' ? 'active-nav-link' : ''}
+              >
+                Minu Profiil
+              </Button>
               <Button color="inherit" onClick={handleLogout}>
-                Logi Välja
+                Logi välja
               </Button>
             </>
           ) : (
             <>
-              <Button color="inherit" component={Link} to="/login">
-                Logi Sisse
+              <Button 
+                color="inherit" 
+                component={Link} 
+                to="/login"
+                className={location.pathname === '/login' ? 'active-nav-link' : ''}
+              >
+                Logi sisse
               </Button>
-              <Button color="inherit" component={Link} to="/register">
+              <Button 
+                color="inherit" 
+                component={Link} 
+                to="/register"
+                className={location.pathname === '/register' ? 'active-nav-link' : ''}
+              >
                 Registreeru
               </Button>
             </>

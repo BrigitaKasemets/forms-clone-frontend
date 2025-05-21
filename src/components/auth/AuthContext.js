@@ -30,28 +30,28 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-  try {
-    console.log("Attempting login with:", email);
-    const response = await authService.login(email, password);
-    console.log("Login response:", response);
-    
-    if (!response || !response.token) {
-      console.error("No token received during login.");
-      throw new Error("[AUTH_INVALID_CREDENTIALS] Vale e-posti aadress või parool");
+    try {
+      console.log("Attempting login with:", email);
+      const response = await authService.login(email, password);
+      console.log("Login response:", response);
+      
+      if (!response || !response.token) {
+        console.error("No token received during login.");
+        throw new Error("[AUTH_INVALID_CREDENTIALS] Vale e-posti aadress või parool");
+      }
+
+      setCurrentUser({
+        isLoggedIn: true,
+        token: response.token,
+        user: response.user || { email }
+      });
+
+      return response;
+    } catch (error) {
+      console.error("Login error:", error.message);
+      throw error; // edasi Login komponendile
     }
-
-    setCurrentUser({
-      isLoggedIn: true,
-      token: response.token,
-      user: response.user || { email }
-    });
-
-    return response;
-  } catch (error) {
-    console.error("Login error:", error.message);
-    throw error; // edasi Login komponendile
-  }
-};
+  };
 
 
   const register = async (name, email, password) => {
@@ -90,6 +90,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     currentUser,
+    setCurrentUser,
     loading,
     login,
     register,

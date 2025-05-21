@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './components/auth/AuthContext';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
+import ProfilePage from './components/user/ProfilePage';
 import Layout from './components/ui/Layout';
 import PrivateRoute from './components/ui/PrivateRoute';
 
@@ -20,6 +21,8 @@ function App() {
             {/* Protected routes */}
             <Route element={<PrivateRoute />}>
               <Route path="/forms" element={<div>Vormide leht</div>} />
+              <Route path="/profile" element={<ProfilePage />} />
+
               {/* Add more protected routes here */}
             </Route>
             
