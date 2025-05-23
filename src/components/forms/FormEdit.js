@@ -514,8 +514,10 @@ const FormEdit = () => {
         onClose={handleQuestionDialogClose}
         fullWidth
         maxWidth="md"
+        aria-labelledby="question-dialog-title"
+        disableRestoreFocus
       >
-        <DialogTitle>
+        <DialogTitle id="question-dialog-title">
           {editingQuestionIndex >= 0 ? 'Muuda küsimust' : 'Lisa uus küsimus'}
         </DialogTitle>
         <DialogContent>
@@ -534,41 +536,58 @@ const FormEdit = () => {
             sx={{ mb: 2 }}
           />
           
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth variant="outlined" sx={{ mb: 2 }}>
-                <InputLabel id="question-type-label">Küsimuse tüüp</InputLabel>
-                <Select
-                  labelId="question-type-label"
-                  name="type"
-                  value={currentQuestion.type}
-                  onChange={handleQuestionChange}
-                  label="Küsimuse tüüp"
-                >
-                  <MenuItem value="shorttext">Lühivastus</MenuItem>
-                  <MenuItem value="paragraph">Lõik</MenuItem>
-                  <MenuItem value="multiplechoice">Valikvastus (üks valik)</MenuItem>
-                  <MenuItem value="checkbox">Märkeruudud (mitu valikut)</MenuItem>
-                  <MenuItem value="dropdown">Rippmenüü</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <FormGroup>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={currentQuestion.required}
-                      onChange={handleQuestionChange}
-                      name="required"
-                    />
-                  }
-                  label="Kohustuslik küsimus"
-                />
-              </FormGroup>
-            </Grid>
-          </Grid>
+          <Grid container spacing={2} columns={12}>
+  <Grid
+    sx={{
+      gridColumn: {
+        xs: 'span 12',
+        sm: 'span 6',
+      },
+    }}
+  >
+    <FormControl fullWidth variant="outlined" sx={{ mb: 2 }}>
+      <InputLabel id="question-type-label">Küsimuse tüüp</InputLabel>
+      <Select
+        labelId="question-type-label"
+        id="question-type"
+        name="type"
+        value={currentQuestion.type}
+        onChange={handleQuestionChange}
+        label="Küsimuse tüüp"
+        aria-labelledby="question-type-label"
+      >
+        <MenuItem value="shorttext">Lühivastus</MenuItem>
+        <MenuItem value="paragraph">Lõik</MenuItem>
+        <MenuItem value="multiplechoice">Valikvastus (üks valik)</MenuItem>
+        <MenuItem value="checkbox">Märkeruudud (mitu valikut)</MenuItem>
+        <MenuItem value="dropdown">Rippmenüü</MenuItem>
+      </Select>
+    </FormControl>
+  </Grid>
+
+  <Grid
+    sx={{
+      gridColumn: {
+        xs: 'span 12',
+        sm: 'span 6',
+      },
+    }}
+  >
+    <FormGroup>
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={currentQuestion.required}
+            onChange={handleQuestionChange}
+            name="required"
+          />
+        }
+        label="Kohustuslik küsimus"
+      />
+    </FormGroup>
+  </Grid>
+</Grid>
+
           
           {/* Options for multiple choice, checkbox, and dropdown */}
           {['multiplechoice', 'checkbox', 'dropdown'].includes(currentQuestion.type) && (
@@ -637,7 +656,7 @@ const FormEdit = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleQuestionDialogClose} disabled={saving}>Tühista</Button>
+          <Button onClick={handleQuestionDialogClose} disabled={saving} autoFocus>Tühista</Button>
           <Button 
             onClick={handleSaveQuestion} 
             variant="contained" 
@@ -650,16 +669,22 @@ const FormEdit = () => {
       </Dialog>
       
       {/* Delete Question Dialog */}
-      <Dialog open={deleteQuestionDialog} onClose={handleDeleteQuestionCancel}>
-        <DialogTitle>Kinnita kustutamine</DialogTitle>
+      <Dialog 
+        open={deleteQuestionDialog} 
+        onClose={handleDeleteQuestionCancel}
+        aria-labelledby="delete-question-dialog-title"
+        aria-describedby="delete-question-dialog-description"
+        disableRestoreFocus
+      >
+        <DialogTitle id="delete-question-dialog-title">Kinnita kustutamine</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <DialogContentText id="delete-question-dialog-description">
             Kas olete kindel, et soovite kustutada küsimuse "{questionToDelete?.question?.text}"? 
             See toiming on pöördumatu.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDeleteQuestionCancel} disabled={saving}>Tühista</Button>
+          <Button onClick={handleDeleteQuestionCancel} disabled={saving} autoFocus>Tühista</Button>
           <Button 
             onClick={handleDeleteQuestionConfirm} 
             variant="contained" 

@@ -39,6 +39,7 @@ const ProfilePage = () => {
   const [success, setSuccess] = useState('');
   const [openPasswordDialog, setOpenPasswordDialog] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+  const [passwordLoadingMessage, setPasswordLoadingMessage] = useState('');
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   
@@ -150,6 +151,7 @@ const ProfilePage = () => {
       confirmPassword: ''
     });
     setPasswordError('');
+    setPasswordLoadingMessage('');
     setOpenPasswordDialog(true);
   };
   
@@ -193,11 +195,9 @@ const ProfilePage = () => {
       // Kuvame kasutajale, et toimub parooli muutmine
       setLoading(true);
       setPasswordError(''); // Tühjendame varem esinenud vead
+      setPasswordLoadingMessage('Parooli muutmine on käimas, palun oodake...');
       
       console.log('Saadame parooli muutmise päringu serverile...');
-      
-      // Submit password change with loading message
-      setPasswordError('Parooli muutmine on käimas, palun oodake...');
       
       try {
         const result = await UserService.changePassword('me', {
@@ -209,9 +209,13 @@ const ProfilePage = () => {
         
         // Uuendatud vastus sisaldab success välja
         if (result && result.success) {
-          // Suleme dialoogi ja näitame eduka muutmise teadet
-          setSuccess('Parool on edukalt muudetud! Palun logi uue parooliga sisse.');
+          // Suleme dialoogi enne staatuse muutmist, et vältida visuaalseid probleeme
           handlePasswordDialogClose();
+          
+          // Tühjendame vead ja näitame eduka muutmise teadet
+          setPasswordError('');
+          setPasswordLoadingMessage('');
+          setSuccess('Parool on edukalt muudetud! Palun logi uue parooliga sisse.');
           
           // Logime kasutaja välja ja suuname sisselogimislehele
           setTimeout(() => {
@@ -221,14 +225,17 @@ const ProfilePage = () => {
           }, 2000);
         } else {
           // Kui vastuses pole success true, siis miski läks valesti
+          setPasswordLoadingMessage('');
           setPasswordError('Parooli muutmine ebaõnnestus. Proovi uuesti.');
         }
       } catch (apiError) {
         console.error('API Error changing password:', apiError);
+        setPasswordLoadingMessage('');
         setPasswordError(apiError.message || 'Viga parooli muutmisel serveri poolel');
       }
     } catch (err) {
       console.error('Error changing password:', err);
+      setPasswordLoadingMessage('');
       setPasswordError(err.message || 'Viga parooli muutmisel');
     } finally {
       setLoading(false);
@@ -281,8 +288,14 @@ const ProfilePage = () => {
         <Typography variant="h4" gutterBottom>Profiil</Typography>
         
         <form onSubmit={handleSubmit} className="profile-form">
-          <Grid container spacing={3}>
-            <Grid sx={{ width: '100%', mb: 2 }}>
+          <Grid container spacing={3} columns={12}>
+            <Grid
+              sx={{
+                gridColumn: 'span 12',
+                width: '100%',
+                mb: 2,
+              }}
+            >
               <TextField
                 fullWidth
                 variant="outlined"
@@ -291,29 +304,42 @@ const ProfilePage = () => {
                 value={userData.name}
                 onChange={handleChange}
               />
-            </Grid>
-            <Grid sx={{ width: '100%', mb: 2 }}>
-              <TextField
-                fullWidth
-                variant="outlined"
-                name="email"
-                label="E-post"
-                type="email"
-                value={userData.email}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid sx={{ width: '100%' }}>
-              <Button 
-                type="submit" 
-                variant="contained" 
-                color="primary"
-                disabled={loading}
-              >
-                Salvesta
-              </Button>
-            </Grid>
           </Grid>
+
+  <Grid
+    sx={{
+      gridColumn: 'span 12',
+      width: '100%',
+      mb: 2,
+    }}
+  >
+    <TextField
+      fullWidth
+      variant="outlined"
+      name="email"
+      label="E-post"
+      type="email"
+      value={userData.email}
+      onChange={handleChange}
+    />
+  </Grid>
+
+  <Grid
+    sx={{
+      gridColumn: 'span 12',
+      width: '100%',
+    }}
+  >
+    <Button 
+      type="submit" 
+      variant="contained" 
+      color="primary"
+      disabled={loading}
+    >
+      Salvesta
+    </Button>
+  </Grid>
+</Grid>
         </form>
         
         <Divider style={{ margin: '30px 0' }} />
@@ -349,10 +375,6 @@ const ProfilePage = () => {
           onClose={handlePasswordDialogClose}
           aria-labelledby="password-dialog-title"
           aria-describedby="password-dialog-description"
-          keepMounted
-          disablePortal
-          disableEnforceFocus
-          disableAutoFocus
         >
           <DialogTitle id="password-dialog-title">Parooli muutmine</DialogTitle>
           <DialogContent>
@@ -360,6 +382,11 @@ const ProfilePage = () => {
               Parooli muutmiseks sisesta praegune parool ja seejärel uus parool kaks korda.
             </DialogContentText>
             <Box component="form" onSubmit={handlePasswordSubmit} sx={{ mt: 2 }}>
+              {passwordLoadingMessage && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  {passwordLoadingMessage}
+                </Alert>
+              )}
               {passwordError && (
                 <Alert severity="error" sx={{ mb: 2 }}>
                   {passwordError}
@@ -417,10 +444,6 @@ const ProfilePage = () => {
           onClose={handleDeleteDialogClose}
           aria-labelledby="delete-dialog-title"
           aria-describedby="delete-dialog-description"
-          keepMounted
-          disablePortal
-          disableEnforceFocus
-          disableAutoFocus
         >
           <DialogTitle id="delete-dialog-title">Konto kustutamine</DialogTitle>
           <DialogContent>

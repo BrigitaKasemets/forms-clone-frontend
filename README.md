@@ -2,6 +2,11 @@
 
 A modern form creation and management application built with React. This project allows users to create, edit, view, and manage forms similar to popular form services.
 
+## Related Repositories
+
+The backend API for this project is available at:
+- [Forms Clone API](https://github.com/BrigitaKasemets/forms-clone-api)
+
 ## Getting Started
 
 ### Prerequisites
@@ -41,10 +46,3 @@ npm run build
 ```
 
 This creates optimized files in the `build` folder that can be deployed to a web server.
-
-### Running Tests
-
-Execute the test suite:
-```
-npm test
-```

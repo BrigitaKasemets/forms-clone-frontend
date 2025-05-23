@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { 
@@ -43,9 +43,6 @@ const Login = () => {
   const [hasAuthError, setHasAuthError] = useState(() => {
     return localStorage.getItem('hasAuthError') === 'true';
   });
-  
-  // Snackbar näitamiseks autentimisvea puhul
-  const [showSnackbar, setShowSnackbar] = useState(false);
   
   // Success message for account actions
   const [successMessage, setSuccessMessage] = useState('');
@@ -96,29 +93,35 @@ const Login = () => {
     setHasAuthError(value);
     if (value) {
       localStorage.setItem('hasAuthError', 'true');
-      // Kui tegu on autentimisveaga, näitame kindlasti snackbari
-      setShowSnackbar(true);
     } else {
       localStorage.removeItem('hasAuthError');
     }
   };
 
+  // Esimese renderdamise jälgimiseks
+  const isFirstRender = useRef(true);
+  // Ref väärtused eelmise error ja hasAuthError jaoks, et vältida liigset renderdamist
+  const prevErrorRef = useRef(error);
+  const prevAuthErrorRef = useRef(hasAuthError);
+
   // Kuna kasutame localStorage init, siis kui on juba viga, näitame kohe Snackbari
   useEffect(() => {
-    // Puhastame salvestatud vead, kui komponent laetakse uuesti
-    const clearLoginErrors = () => {
-      localStorage.removeItem('loginError');
-      localStorage.removeItem('loginEmailError');
-      localStorage.removeItem('loginPasswordError');
-      localStorage.removeItem('loginAttempted');
-      localStorage.removeItem('hasAuthError');
-    };
-
-    // Puhastame localStorage'ist vanad veateated komponendi laadimisel
-    clearLoginErrors();
-    
-    if (hasAuthError) {
-      setShowSnackbar(true);
+    // Esimesel renderdamisel kontrollime localStorage-i
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      
+      // Vaatame, kas localStorage'is on veateade
+      const existingError = localStorage.getItem('loginError');
+      const existingAuthError = localStorage.getItem('hasAuthError') === 'true';
+      
+      if (!existingError && !existingAuthError) {
+        // Kui veateadet ei ole, puhastame igaks juhuks localStorage'i
+        localStorage.removeItem('loginError');
+        localStorage.removeItem('loginEmailError');
+        localStorage.removeItem('loginPasswordError');
+        localStorage.removeItem('loginAttempted');
+        localStorage.removeItem('hasAuthError');
+      }
     }
     
     // Check for messages in location state (like account deletion)
@@ -130,9 +133,14 @@ const Login = () => {
       navigate(location.pathname, { replace: true, state: {} });
     }
     
-    // DEBUGGING
-    console.log('Login komponent renderdatud, error:', error, 'hasAuthError:', hasAuthError);
-  }, [error, hasAuthError, location, navigate]);
+    // Logime ainult kui väärtused on muutunud, et vältida liigset logimist kui väärtused on muutunud, et vältida liigset logimist
+    if (error !== prevErrorRef.current || hasAuthError !== prevAuthErrorRef.current) {
+      console.log('Login komponent renderdatud, error:', error, 'hasAuthError:', hasAuthError);
+      // Uuendame ref väärtused
+      prevErrorRef.current = error;
+      prevAuthErrorRef.current = hasAuthError;
+    }
+  }, [location, navigate, error, hasAuthError]);
 
   const handleEmailChange = (e) => {
     setEmail(e.target.value);
@@ -153,6 +161,9 @@ const Login = () => {
     
     // Märgime, et kasutaja on üritanud sisse logida
     setPersistentAttemptedLogin(true);
+    
+    // Hoiame ühte muutujat, mis jälgib, kas login õnnestus
+    let loginSuccessful = false;
     
     try {
       setLoading(true);
@@ -183,6 +194,9 @@ const Login = () => {
       const result = await login(email, password);
       console.log("Login successful:", result);
       
+      // Märgime, et login õnnestus
+      loginSuccessful = true;
+      
       // Kui login õnnestus, siis kustutame kõik veateated
       clearAllErrors();
       
@@ -201,6 +215,9 @@ const Login = () => {
         // et kasutaja näeks, et süsteem töötleb tema päringut
         const navigateDelay = elapsedTime < 100 ? 100 - elapsedTime : 0;
         
+        // Veendume, et kõik veateated on kindlasti eemaldatud enne navigeerimist
+        clearAllErrors();
+        
         // Suuname kasutaja vormide lehele optimaalse viivitusega
         setTimeout(() => {
           navigate('/forms', { replace: true, state: { activeTab: 0 } });
@@ -211,6 +228,11 @@ const Login = () => {
       }
     } catch (err) {
       console.error('Login error in component:', err);
+      
+      // Kui login on juba õnnestunud, siis ei näita veateadet
+      if (loginSuccessful) {
+        return;
+      }
       
       // Ensure we have an error message even if err.message is undefined
       const errorMessage = err.message || 'Sisselogimine ebaõnnestus. Proovige uuesti.';
@@ -231,9 +253,8 @@ const Login = () => {
         setPersistentPasswordError(errorMsg);
         setPersistentError(errorMsg);
         
-        // Märgime, et tegemist on autentimisveaga ja näitame Snackbari
+        // Märgime, et tegemist on autentimisveaga
         setPersistentHasAuthError(true);
-        setShowSnackbar(true);
       } else if (errorMessage.toLowerCase().includes('email')) {
         setPersistentEmailError(errorMessage);
         setPersistentError(errorMessage);
@@ -246,7 +267,10 @@ const Login = () => {
         setPersistentError(errorMessage);
       }
     } finally {
-      setLoading(false);
+      // Ainult siis seame loading=false, kui login polnud edukas
+      if (!loginSuccessful) {
+        setLoading(false);
+      }
     }
   };
 
@@ -255,7 +279,6 @@ const Login = () => {
     setPersistentEmailError('');
     setPersistentPasswordError('');
     setPersistentHasAuthError(false);
-    setShowSnackbar(false);
   };
 
   const clearForm = () => {
@@ -269,8 +292,6 @@ const Login = () => {
     setPersistentPasswordError('');
     setPersistentAttemptedLogin(false);
     setPersistentHasAuthError(false);
-    
-    setShowSnackbar(false);
   };
 
   // Funktstioon Snackbari sulgemiseks
@@ -278,7 +299,8 @@ const Login = () => {
     if (reason === 'clickaway') {
       return; // Ei sulge Snackbari klõpsu peale mujale
     }
-    setShowSnackbar(false);
+    // Kustutame autentimisvea lipp, mis sulgeb Snackbari
+    setPersistentHasAuthError(false);
   };
 
   return (
@@ -376,7 +398,7 @@ const Login = () => {
                     animation: 'pulse 1s infinite'
                   }} 
                 />
-                <style jsx>{`
+                <style>{`
                   @keyframes pulse {
                     0% { opacity: 0.4; }
                     50% { opacity: 1; }
@@ -414,7 +436,7 @@ const Login = () => {
       
       {/* Lisame ka Snackbari, mis näitab veateadet püsivalt */}
       <Snackbar
-        open={showSnackbar && hasAuthError}
+        open={hasAuthError} // Kasutame ainult hasAuthError tingimust
         autoHideDuration={null} // Ei sule automaatselt
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}

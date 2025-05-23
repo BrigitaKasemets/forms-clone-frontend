@@ -41,9 +41,7 @@ const createInitialAnswers = (questions) => {
     }
   });
   return initialAnswers;
-};
-
-// Reusable alert component
+};  // Reusable alert component
 const AlertMessage = ({ open, message, severity, onClose }) => (
   <Snackbar
     open={open}
@@ -53,6 +51,11 @@ const AlertMessage = ({ open, message, severity, onClose }) => (
   >
     <Alert onClose={onClose} severity={severity}>
       {message}
+      {severity === 'success' && (
+        <Typography variant="caption" component="div" sx={{ mt: 1 }}>
+          Teid suunatakse automaatselt tagasi vormide lehele...
+        </Typography>
+      )}
     </Alert>
   </Snackbar>
 );
@@ -203,10 +206,10 @@ const FormView = () => {
       // Clear form after submission
       setAnswers(createInitialAnswers(questions));
       
-      // Navigate back to forms list after a delay
+      // Navigate back to forms list after a short delay - just enough to see the success message
       setTimeout(() => {
         navigate('/forms', { state: { activeTab: isFormOwner() ? 0 : 1 } });
-      }, 3000);
+      }, 1500);
     } catch (err) {
       console.error('Error submitting form:', err);
       setError('Vormi saatmine ebaõnnestus. Palun proovige hiljem uuesti.');
@@ -300,6 +303,8 @@ const FormView = () => {
                     <TextField
                       variant="outlined"
                       size="small"
+                      id={`question-${question.id}`}
+                      name={`question-${question.id}`}
                       value={answers[question.id] || ''}
                       onChange={(e) => handleInputChange(question.id, e.target.value)}
                       error={!!validationErrors[question.id]}
@@ -313,6 +318,8 @@ const FormView = () => {
                       variant="outlined"
                       multiline
                       rows={4}
+                      id={`paragraph-${question.id}`}
+                      name={`paragraph-${question.id}`}
                       value={answers[question.id] || ''}
                       onChange={(e) => handleInputChange(question.id, e.target.value)}
                       error={!!validationErrors[question.id]}
@@ -325,6 +332,7 @@ const FormView = () => {
                     <RadioGroup
                       value={answers[question.id] || ''}
                       onChange={(e) => handleInputChange(question.id, e.target.value)}
+                      name={`multiplechoice-${question.id}`}
                     >
                       {question.options.map((option, i) => (
                         <FormControlLabel
@@ -352,6 +360,8 @@ const FormView = () => {
                             <Checkbox
                               checked={answers[question.id]?.includes(option) || false}
                               onChange={() => handleCheckboxChange(question.id, option)}
+                              id={`checkbox-${question.id}-${i}`}
+                              name={`checkbox-${question.id}[]`}
                             />
                           }
                           label={option}
@@ -368,11 +378,15 @@ const FormView = () => {
                   {/* Dropdown question */}
                   {question.type === 'dropdown' && (
                     <FormControl fullWidth variant="outlined" size="small">
-                      <InputLabel>Vali vastus</InputLabel>
+                      <InputLabel id={`dropdown-label-${question.id}`}>Vali vastus</InputLabel>
                       <Select
                         value={answers[question.id] || ''}
                         onChange={(e) => handleInputChange(question.id, e.target.value)}
                         label="Vali vastus"
+                        id={`dropdown-${question.id}`}
+                        labelId={`dropdown-label-${question.id}`}
+                        name={`dropdown-${question.id}`}
+                        displayEmpty
                         error={!!validationErrors[question.id]}
                       >
                         <MenuItem value="">
@@ -406,8 +420,32 @@ const FormView = () => {
                 onClick={handleSubmit}
                 disabled={submitting}
                 size="large"
+                sx={{ position: 'relative' }}
               >
-                {submitting ? 'Saadan...' : 'Saada vastused'}
+                {submitting ? (
+                  <>
+                    <span style={{ opacity: 0.7 }}>Saadan...</span>
+                    <span 
+                      style={{ 
+                        position: 'absolute', 
+                        right: '10px',
+                        display: 'inline-block',
+                        width: '10px',
+                        height: '10px',
+                        borderRadius: '50%',
+                        backgroundColor: 'white',
+                        animation: 'pulse 1s infinite'
+                      }} 
+                    />
+                    <style>{`
+                      @keyframes pulse {
+                        0% { opacity: 0.4; }
+                        50% { opacity: 1; }
+                        100% { opacity: 0.4; }
+                      }
+                    `}</style>
+                  </>
+                ) : 'Saada vastused'}
               </Button>
             </Box>
           </Box>

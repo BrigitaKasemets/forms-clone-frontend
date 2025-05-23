@@ -5,7 +5,7 @@ import {
   Typography, 
   Button, 
   Box, 
-  Grid, 
+  Grid,
   Card, 
   CardContent, 
   CardActions,
@@ -155,9 +155,9 @@ const FormsList = () => {
       handleDialogClose();
       setSuccess('Vorm on edukalt loodud!');
       
-      // Navigate to edit page
+      // Stay on the forms list page (homepage) instead of navigating to edit page
       setTimeout(() => {
-        navigate(`/forms/${createdForm.id}/edit`);
+        setTabValue(0); // Switch to "My Forms" tab to show the new form
       }, 1000);
     } catch (err) {
       setError('Vormi loomine ebaõnnestus. Proovige hiljem uuesti.');
@@ -239,7 +239,16 @@ const FormsList = () => {
 
   // Extracted form card render function to avoid duplicate code
   const renderFormCard = (form, isMyForm) => (
-    <Grid item xs={12} sm={6} md={4} key={form.id}>
+    <Grid
+    key={form.id}
+    sx={{
+      gridColumn: {
+        xs: 'span 12',
+        sm: 'span 6',
+        md: 'span 4',
+      },
+    }}
+    >
       <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <CardContent sx={{ flexGrow: 1 }}>
           <Typography variant="h5" component="h2" gutterBottom noWrap>
@@ -306,14 +315,6 @@ const FormsList = () => {
             </>
           ) : (
             <>
-              <Button 
-                size="small" 
-                color="primary"
-                startIcon={<VisibilityIcon />}
-                onClick={() => navigate(`/forms/${form.id}`)}
-              >
-                Vaata
-              </Button>
               <Button 
                 size="small" 
                 color="primary"

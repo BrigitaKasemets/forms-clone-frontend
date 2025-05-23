@@ -148,12 +148,6 @@ const FormResponses = () => {
     return question || null;
   };
   
-  // Find question text by ID
-  const getQuestionText = (questionId) => {
-    const question = getQuestion(questionId);
-    return question ? question.text : 'Küsimus pole saadaval';
-  };
-  
   if (loading && !form) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4, display: 'flex', justifyContent: 'center' }}>
@@ -267,8 +261,9 @@ const FormResponses = () => {
         onClose={handleCloseDetailDialog}
         fullWidth
         maxWidth="md"
+        aria-labelledby="response-detail-dialog-title"
       >
-        <DialogTitle>
+        <DialogTitle id="response-detail-dialog-title">
           Vastuste detailid
           {selectedResponse?.respondentName && (
             <>: {selectedResponse.respondentName}</>
@@ -317,7 +312,9 @@ const FormResponses = () => {
                         Vastus:
                       </Typography>
                       <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                        {answer.answer || '-'}
+                        {answer.answer === 'Vali vastus' ? 
+                          '-' : 
+                          (question?.type === 'dropdown' && !answer.answer ? '-' : answer.answer || '-')}
                       </Typography>
                     </Box>
                   </Box>
@@ -334,10 +331,15 @@ const FormResponses = () => {
       </Dialog>
       
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialog} onClose={handleDeleteCancel}>
-        <DialogTitle>Kinnita kustutamine</DialogTitle>
+      <Dialog 
+        open={deleteDialog} 
+        onClose={handleDeleteCancel}
+        aria-labelledby="delete-response-dialog-title"
+        aria-describedby="delete-response-dialog-description"
+      >
+        <DialogTitle id="delete-response-dialog-title">Kinnita kustutamine</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <DialogContentText id="delete-response-dialog-description">
             Kas olete kindel, et soovite selle vastuse kustutada? 
             See toiming on pöördumatu.
           </DialogContentText>
